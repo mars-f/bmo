@@ -342,6 +342,12 @@ InnoDB is disabled in your MySQL installation.
 Bugzilla requires InnoDB to be enabled.
 Please enable it and then re-run checksetup.pl.
 END
+    mysql_innodb_settings => <<'END',
+Bugzilla requires the following MySQL InnoDB settings:
+innodb_file_format = Barracuda
+innodb_file_per_table = 1
+innodb_large_prefix = 1
+END
     mysql_index_renaming => <<'END',
 We are about to rename old indexes. The estimated time to complete
 renaming is ##minutes## minutes. You cannot interrupt this action once
