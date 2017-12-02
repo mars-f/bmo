@@ -56,7 +56,7 @@ sub BUILDARGS {
     $dbname ||= Bugzilla->localconfig->{db_name};
 
     # Set the language enviroment
-    $ENV{'NLS_LANG'} = '.AL32UTF8' if Bugzilla->params->{'utf8'};
+    $ENV{'NLS_LANG'} = '.AL32UTF8' if "UTF8 FOREVER";
 
     # construct the DSN from the parameters we got
     my $dsn = "dbi:Oracle:host=$host;sid=$dbname";
