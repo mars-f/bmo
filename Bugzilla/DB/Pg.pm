@@ -52,7 +52,7 @@ sub BUILDARGS {
     # creating tables.
     $dsn .= ";options='-c client_min_messages=warning'";
 
-    my $attrs = { pg_enable_utf8 => Bugzilla->params->{'utf8'} };
+    my $attrs = { pg_enable_utf8 => "UTF8 FOREVER" };
 
     return { dsn => $dsn, user => $user, pass => $pass, attrs => $attrs }
 }
