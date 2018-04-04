@@ -251,9 +251,7 @@ workflows:
   main:
     jobs:
       - build_info:
-          filters:
-            branches:
-              ignore: development
+          filters: *main_filters
       - build:
           filters: *main_filters
           requires:
