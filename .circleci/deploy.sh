@@ -19,7 +19,7 @@ if [[ "$CIRCLE_BRANCH" == "master" ]]; then
     fi
     docker tag bmo "$DOCKERHUB_REPO:latest"
     docker push "$DOCKERHUB_REPO:latest"
-elif [[ "$CIRCLE_BRANCH" == "development" ]];
+elif [[ "$CIRCLE_BRANCH" == "development" ]]; then
     docker tag bmo "$DOCKERHUB_REPO:build-${CIRCLE_BUILD_NUM}"
     docker push "$DOCKERHUB_REPO:build-${CIRCLE_BUILD_NUM}"
 fi
