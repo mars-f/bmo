@@ -7,10 +7,9 @@ version: 2
 
 main_filters: &main_filters
   branches:
-    ignore:
-      - /^(?:release|test)-20\d\d\d\d\d\d\.\d+/
-      - /\//
-      - production
+    only:
+      - master
+      - development
 
 defaults:
   bmo_slim_image: &bmo_slim_image
@@ -252,7 +251,9 @@ workflows:
   main:
     jobs:
       - build_info:
-          filters: *main_filters
+          filters:
+            branches:
+              ignore: development
       - build:
           filters: *main_filters
           requires:
