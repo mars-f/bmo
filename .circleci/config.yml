@@ -278,13 +278,3 @@ workflows:
     jobs:
       - build:
           filters: *dev_filters
-          # requires:
-          #   - test_sanity
-          #   - test_bmo
-          #   - test_webservices
-      # - test_sanity:
-          # filters: *dev_filters
-      # - test_bmo:
-          # filters: *dev_filters
-      # - test_webservices:
-          # filters: *dev_filters
