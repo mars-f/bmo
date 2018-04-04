@@ -156,13 +156,17 @@ jobs:
       - checkout
       - attach_workspace:
           at: /app/build_info
-      - run: |
-          [[ -f build_info/only_version_changed.txt ]] && exit 0
-          mv /opt/bmo/local /app/local
-          mkdir artifacts
-      - run: |
-          [[ -f build_info/only_version_changed.txt ]] && exit 0
-          perl Makefile.PL
+      - run:
+          name: copy /opt/bmo/local to /app/local
+          command: |
+            [[ -f build_info/only_version_changed.txt ]] && exit 0
+            mv /opt/bmo/local /app/local
+            mkdir artifacts
+      - run:
+          name: check Dependencies
+          command: |
+            [[ -f build_info/only_version_changed.txt ]] && exit 0
+            perl Makefile.PL
       - run:
           name: run sanity tests
           command: |
@@ -242,7 +246,7 @@ jobs:
 
 workflows:
   version: 2
-  main:
+  release:
     jobs:
       - build_info:
           filters: *main_filters
@@ -274,13 +278,13 @@ workflows:
     jobs:
       - build:
           filters: *dev_filters
-          requires:
-            - test_sanity
-            - test_bmo
-            - test_webservices
-      - test_sanity:
-          filters: *dev_filters
-      - test_bmo:
-          filters: *dev_filters
-      - test_webservices:
-          filters: *dev_filters
+          # requires:
+          #   - test_sanity
+          #   - test_bmo
+          #   - test_webservices
+      # - test_sanity:
+          # filters: *dev_filters
+      # - test_bmo:
+          # filters: *dev_filters
+      # - test_webservices:
+          # filters: *dev_filters
