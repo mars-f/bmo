@@ -120,7 +120,7 @@ sub feed_query {
 
     # Check for new transctions (stories)
     my $new_stories = $self->new_stories($story_last_id);
-    INFO("FEED: No new stories") unless @$new_stories;
+    INFO("No new stories") unless @$new_stories;
 
     # Process each story
     foreach my $story_data (@$new_stories) {
@@ -201,6 +201,7 @@ sub user_query {
     }
 }
 
+<<<<<<< HEAD
 sub group_query {
     my ($self) = @_;
 
@@ -261,6 +262,72 @@ sub group_query {
 
         if ( my @group_members = get_group_members($group) ) {
             INFO("Setting group members.");
+            $project->set_members( \@group_members );
+            $project->update();
+        }
+    }
+}
+
+sub group_query {
+    my ($self) = @_;
+
+    # Ensure Phabricator syncing is enabled
+    if ( !Bugzilla->params->{phabricator_enabled} ) {
+        WARN("PHABRICATOR SYNC DISABLED");
+        return;
+    }
+
+    my $phab_sync_groups = Bugzilla->params->{phabricator_sync_groups};
+    if ( !$phab_sync_groups ) {
+        WARN('A comma delimited list of security groups was not provided.');
+        return;
+    }
+
+    # PROCESS SECURITY GROUPS
+
+    INFO("GROUPS: Updating group memberships");
+
+    # Loop through each group and perform the following:
+    #
+    # 1. Load flattened list of group members
+    # 2. Check to see if Phab project exists for 'bmo-<group_name>'
+    # 3. Create if does not exist with locked down policy.
+    # 4. Set project members to exact list
+    # 5. Profit
+
+    my $sync_groups = Bugzilla::Group->match(
+        { name => [ split( '[,\s]+', $phab_sync_groups ) ] } );
+
+    foreach my $group (@$sync_groups) {
+
+        # Create group project if one does not yet exist
+        my $phab_project_name = 'bmo-' . $group->name;
+        my $project = Bugzilla::Extension::PhabBugz::Project->new_from_query(
+            {
+                name => $phab_project_name
+            }
+        );
+        if ( !$project ) {
+            INFO("Project $project not found. Creating.");
+            my $secure_revision =
+              Bugzilla::Extension::PhabBugz::Project->new_from_query(
+                {
+                    name => 'secure-revision'
+                }
+              );
+            $project = Bugzilla::Extension::PhabBugz::Project->create(
+                {
+                    name        => $phab_project_name,
+                    description => 'BMO Security Group for ' . $group->name,
+                    view_policy => $secure_revision->phid,
+                    edit_policy => $secure_revision->phid,
+                    join_policy => $secure_revision->phid
+                }
+            );
+        }
+
+        if ( my @group_members = get_group_members($group) ) {
+            INFO("Setting group members for " . $project->name);
             $project->set_members( \@group_members );
             $project->update();
         }
@@ -339,7 +406,7 @@ sub process_revision_change {
                 INFO("Current policy projects: " . join(", ", @$current_projects));
                 my ($added, $removed) = diff_arrays($current_projects, \@set_projects);
                 if (@$added || @$removed) {
-                    DEBUG('Project groups do not match. Need new custom policy');
+                    INFO('Project groups do not match. Need new custom policy');
                     $current_policy = undef;
                 }
                 else {
