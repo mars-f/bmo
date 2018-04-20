@@ -199,7 +199,6 @@ sub user_query {
     }
 }
 
-<<<<<<< HEAD
 sub group_query {
     my ($self) = @_;
 
