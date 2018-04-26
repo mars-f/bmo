@@ -26,7 +26,6 @@ use Bugzilla::Extension::PhabBugz::Util qw(
     get_phab_bmo_ids
     get_needs_review
     get_security_sync_groups
-    intersect
     is_attachment_phab_revision
     request
 );

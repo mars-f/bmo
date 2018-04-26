@@ -156,17 +156,16 @@ jobs:
       - checkout
       - attach_workspace:
           at: /app/build_info
-      - run:
-          name: copy /opt/bmo/local to /app/local
-          command: |
-            [[ -f build_info/only_version_changed.txt ]] && exit 0
-            mv /opt/bmo/local /app/local
-            mkdir artifacts
-      - run:
-          name: check Dependencies
-          command: |
-            [[ -f build_info/only_version_changed.txt ]] && exit 0
-            perl Makefile.PL
+      - run: |
+          [[ -f build_info/only_version_changed.txt ]] && exit 0
+          mv /opt/bmo/local /app/local
+          mkdir artifacts
+      - run: |
+          [[ -f build_info/only_version_changed.txt ]] && exit 0
+          perl -I/app -I/app/local/lib/perl5 -c -E 'use Bugzilla; BEGIN { Bugzilla->extensions }'
+      - run: |
+          [[ -f build_info/only_version_changed.txt ]] && exit 0   
+          perl Makefile.PL
       - run:
           name: run sanity tests
           command: |
