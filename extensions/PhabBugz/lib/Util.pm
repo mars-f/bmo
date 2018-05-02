@@ -30,9 +30,7 @@ our @EXPORT = qw(
     create_revision_attachment
     get_attachment_revisions
     get_bug_role_phids
-    get_members_by_bmo_id
     get_needs_review
-    get_phab_bmo_ids
     get_security_sync_groups
     intersect
     is_attachment_phab_revision
@@ -96,76 +94,13 @@ sub get_bug_role_phids {
     push(@bug_users, $bug->qa_contact) if $bug->qa_contact;
     push(@bug_users, @{ $bug->cc_users }) if @{ $bug->cc_users };
 
-    return get_members_by_bmo_id(\@bug_users);
-}
+    my $phab_users = Bugzilla::Extension::PhabBugz::User->match(
+      {
+        ids => [ map { $_->id } @bug_users ]
+      }
+    );
 
-sub get_members_by_bmo_id {
-    my $users = shift;
-
-    my $result = get_phab_bmo_ids({ ids => [ map { $_->id } @$users ] });
-
-    my @phab_ids;
-    foreach my $user (@$result) {
-        push(@phab_ids, $user->{phid})
-          if ($user->{phid} && $user->{phid} =~ /^PHID-USER/);
-    }
-
-    return \@phab_ids;
-}
-
-sub get_phab_bmo_ids {
-    my ($params) = @_;
-    my $memcache = Bugzilla->memcached;
-
-    # Try to find the values in memcache first
-    my @results;
-    if ($params->{ids}) {
-        my @new_bmo_ids;
-        foreach my $bmo_id ( @{ $params->{ids} } ) {
-            my $phid = $memcache->get({ key => "phab_user_bmo_id_$bmo_id" });
-            if ($phid) {
-                push @results, {
-                    id   => $bmo_id,
-                    phid => $phid
-                };
-                next;
-            }
-            push @new_bmo_ids, $bmo_id;
-        }
-        $params->{ids} = \@new_bmo_ids;
-    }
-
-    if ($params->{phids}) {
-        my @new_phids;
-        foreach my $phid ( @{ $params->{phids} } ) {
-            my $bmo_id = $memcache->get({ key => "phab_user_phid_$phid" });
-            if ($bmo_id) {
-                push @results, {
-                    id   => $bmo_id,
-                    phid => $phid
-                };
-                next;
-            }
-            push @new_phids, $phid;
-        }
-        $params->{phids} = \@new_phids;
-    }
-
-    if ( $params->{ids} || $params->{phids} ) {
-        my $result = request('bugzilla.account.search', $params);
-
-        # Store new values in memcache for later retrieval
-        foreach my $user (@{ $result->{result} }) {
-            next unless $user->{phid} && $user->{id};
-            $memcache->set({ key   => "phab_user_bmo_id_" . $user->{id},
-                             value => $user->{phid} });
-            $memcache->set({ key   => "phab_user_phid_" . $user->{phid},
-                             value => $user->{id} });
-            push(@results, $user);
-        }
-    }
-
-    return \@results;
+    return [ map { $_->phid } @$phab_users ];
 }
 
 sub is_attachment_phab_revision {
@@ -298,9 +233,13 @@ sub get_needs_review {
     $user //= Bugzilla->user;
     return unless $user->id;
 
-    my $ids = get_members_by_bmo_id([$user]);
-    return [] unless @$ids;
-    my $phid_user = $ids->[0];
+    my $phab_user = Bugzilla::Extension::PhabBugz::User->new_from_query(
+      {
+        ids => [ $user->id ]
+      }
+    );
+
+    return [] unless $phab_user;
 
     my $diffs = request(
         'differential.revision.search',
@@ -309,7 +248,7 @@ sub get_needs_review {
                 reviewers => 1,
             },
             constraints => {
-                reviewerPHIDs => [$phid_user],
+                reviewerPHIDs => [$phab_user->phid],
                 statuses      => [qw( needs-review )],
             },
             order       => 'newest',
@@ -323,7 +262,7 @@ sub get_needs_review {
     foreach my $diff (@{ $diffs->{result}{data} }) {
         my $attachments = delete $diff->{attachments};
         my $reviewers   = $attachments->{reviewers}{reviewers};
-        my $review      = first { $_->{reviewerPHID} eq $phid_user } @$reviewers;
+        my $review      = first { $_->{reviewerPHID} eq $phab_user->phid } @$reviewers;
         $diff->{fields}{review_status} = $review->{status};
         push @result, $diff;
     }
