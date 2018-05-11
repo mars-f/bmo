@@ -15,18 +15,11 @@ use base qw(Bugzilla::WebService);
 
 use Bugzilla::Constants;
 use Bugzilla::User;
-use Bugzilla::Util qw(detaint_natural datetime_from time_ago);
-use Bugzilla::WebService::Constants;
+use Bugzilla::Util qw(time_ago);
 
 use Bugzilla::Extension::PhabBugz::Constants;
 use Bugzilla::Extension::PhabBugz::Util qw(
-    add_security_sync_comments
-    create_revision_attachment
-    get_bug_role_phids
     get_needs_review
-    get_security_sync_groups
-    is_attachment_phab_revision
-    request
 );
 
 use DateTime ();
@@ -35,12 +28,12 @@ use List::MoreUtils qw(any);
 use MIME::Base64 qw(decode_base64);
 
 use constant READ_ONLY => qw(
+    check_user_permission_for_bug
     needs_review
 );
 
 use constant PUBLIC_METHODS => qw(
     check_user_permission_for_bug
-
     needs_review
 );
 
@@ -175,7 +168,7 @@ sub rest_resources {
             GET => {
                 method => 'needs_review',
             },
-        },
+        }
     ];
 }
 
