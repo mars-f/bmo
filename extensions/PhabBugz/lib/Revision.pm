@@ -334,7 +334,7 @@ sub _build_subscribers {
         push @phids, $phid;
     }
 
-    my $users = Bugzilla::Extension::PhabBugz::User->math(
+    my $users = Bugzilla::Extension::PhabBugz::User->match(
       {
         phids => \@phids
       }
