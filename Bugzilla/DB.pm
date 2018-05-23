@@ -243,7 +243,6 @@ sub bz_check_server_version {
     my ($self, $db, $output) = @_;
 
     my $sql_vers = $self->bz_server_version;
-    $self->disconnect;
 
     my $sql_want = $db->{db_version};
     my $version_ok = vers_cmp($sql_vers, $sql_want) > -1 ? 1 : 0;
@@ -299,7 +298,6 @@ sub bz_create_database {
         }
     }
 
-    $dbh->disconnect;
 }
 
 # A helper for bz_create_database and bz_check_requirements.
