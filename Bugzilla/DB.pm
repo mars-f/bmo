@@ -1311,7 +1311,7 @@ sub _build_dbh {
     my $class = ref $self;
     if ($class->can('on_dbi_connected')) {
         $attributes->{Callbacks} = {
-            connected => sub { $class->on_dbi_connected(@_) },
+            connected => sub { $class->on_dbi_connected(@_); return },
         }
     }
 

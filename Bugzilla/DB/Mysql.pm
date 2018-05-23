@@ -85,7 +85,7 @@ sub on_dbi_connected {
 
     # Allow large GROUP_CONCATs (largely for inserting comments
     # into bugs_fulltext).
-    $self->do('SET SESSION group_concat_max_len = 128000000');
+    $dbh->do('SET SESSION group_concat_max_len = 128000000');
 }
 
 # when last_insert_id() is supported on MySQL by lowest DBI/DBD version
