@@ -231,11 +231,11 @@ sub group_query {
     my $sync_groups = Bugzilla::Group->match( { isactive => 1, isbuggroup => 1 } );
 
     # Load phab-bot Phabricator user to add as a member of each project group later
-    my $bmo_user = Bugzilla::User->new({ name => PHAB_AUTOMATION_USER, cache => 1 });
+    my $phab_bmo_user = Bugzilla::User->new( { name => PHAB_AUTOMATION_USER, cache => 1 } );
     my $phab_user =
       Bugzilla::Extension::PhabBugz::User->new_from_query(
         {
-          ids => [ $bmo_user->id ]
+            ids => [ $phab_bmo_user->id ]
         }
     );
 
