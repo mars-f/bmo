@@ -8,10 +8,9 @@
 package Bugzilla::DB::Sqlite;
 
 use 5.10.1;
-use strict;
-use warnings;
+use Moo;
 
-use base qw(Bugzilla::DB);
+extends qw(Bugzilla::DB);
 
 use Bugzilla::Constants;
 use Bugzilla::Error;
@@ -69,7 +68,7 @@ sub _sqlite_position_ci {
 # Constructor #
 ###############
 
-sub new {
+sub BUILDARGS {
     my ($class, $params) = @_;
     my $db_name = $params->{db_name};
 
@@ -97,8 +96,14 @@ sub new {
         sqlite_unicode => Bugzilla->params->{'utf8'},
     };
 
-    my $self = $class->db_new({ dsn => $dsn, user => '',
-                                pass => '', attrs => $attrs });
+    return { dsn => $dsn, user => '', pass => '', attrs => $attrs };
+
+
+}
+
+sub BUILD {
+    my $self = shift;
+
     # Needed by TheSchwartz
     $self->{private_bz_dsn} = $dsn;
 
@@ -136,9 +141,6 @@ sub new {
     $self->sqlite_create_function('now', 0, \&_sqlite_now);
     $self->sqlite_create_function('localtimestamp', 1, \&_sqlite_now);
     $self->sqlite_create_function('floor', 1, \&POSIX::floor);
-
-    bless ($self, $class);
-    return $self;
 }
 
 ###############

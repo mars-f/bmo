@@ -22,10 +22,9 @@ For interface details see L<Bugzilla::DB> and L<DBI>.
 package Bugzilla::DB::Mysql;
 
 use 5.10.1;
-use strict;
-use warnings;
+use Moo;
 
-use base qw(Bugzilla::DB);
+extends qw(Bugzilla::DB);
 
 use Bugzilla::Constants;
 use Bugzilla::Install::Util qw(install_string);
@@ -43,7 +42,7 @@ use constant MAX_COMMENTS => 50;
 
 use constant FULLTEXT_OR => '|';
 
-sub new {
+sub BUILDARGS {
     my ($class, $params) = @_;
     my ($user, $pass, $host, $dbname, $port, $sock) =
         @$params{qw(db_user db_pass db_host db_name db_port db_sock)};
@@ -59,8 +58,11 @@ sub new {
         mysql_auto_reconnect => 1,
     );
 
-    my $self = $class->db_new({ dsn => $dsn, user => $user,
-                                pass => $pass, attrs => \%attrs });
+    return { dsn => $dsn, user => $user, pass => $pass, attrs => \%attrs };
+}
+
+sub BUILD {
+    my $self = shift;
 
     # This makes sure that if the tables are encoded as UTF-8, we
     # return their data correctly.
@@ -71,9 +73,7 @@ sub new {
     $self->{private_bz_tables_locked} = "";
 
     # Needed by TheSchwartz
-    $self->{private_bz_dsn} = $dsn;
-
-    bless ($self, $class);
+    $self->{private_bz_dsn} = $self->dsn;
 
     # Bug 321645 - disable MySQL strict mode, if set
     my ($var, $sql_mode) = $self->selectrow_array(
