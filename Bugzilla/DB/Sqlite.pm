@@ -97,8 +97,6 @@ sub BUILDARGS {
     };
 
     return { dsn => $dsn, user => '', pass => '', attrs => $attrs };
-
-
 }
 
 sub BUILD {
