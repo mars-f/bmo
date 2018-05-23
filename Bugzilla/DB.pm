@@ -1319,9 +1319,8 @@ sub _build_dbh {
     }
 
     my $connector = $Cache{"$user.$dsn"} //= DBIx::Connector->new($dsn, $user, $pass, $attributes);
-    $connector->dbh;
 
-    return $dbh;
+    return $connector->dbh;
 }
 
 #####################################################################
