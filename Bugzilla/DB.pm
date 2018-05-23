@@ -11,6 +11,7 @@ use 5.10.1;
 use Moo;
 
 use DBI;
+use DBIx::Connector;
 
 # This is here to make the diff make more sense
 has 'dbh' => (
@@ -1283,6 +1284,8 @@ sub bz_rollback_transaction {
 # Subclass Helpers
 #####################################################################
 
+my %Cache;
+
 sub _build_dbh {
     my ($self) = @_;
     my ($dsn, $user, $pass, $override_attrs) =
@@ -1290,7 +1293,7 @@ sub _build_dbh {
 
     # set up default attributes used to connect to the database
     # (may be overridden by DB driver implementations)
-    my $attributes = { RaiseError => 0,
+    my $attributes = { RaiseError => 1,
                        AutoCommit => 1,
                        PrintError => 0,
                        ShowErrorStatement => 1,
@@ -1315,15 +1318,8 @@ sub _build_dbh {
         }
     }
 
-    # connect using our known info to the specified db
-    my $dbh = DBI->connect($dsn, $user, $pass, $attributes)
-        or die "\nCan't connect to the database.\nError: $DBI::errstr\n"
-        . "  Is your database installed and up and running?\n  Do you have"
-        . " the correct username and password selected in localconfig?\n\n";
-
-    # RaiseError was only set to 0 so that we could catch the
-    # above "die" condition.
-    $dbh->{RaiseError} = 1;
+    my $connector = $Cache{"$user.$dsn"} //= DBIx::Connector->new($dsn, $user, $pass, $attributes);
+    $connector->dbh;
 
     return $dbh;
 }
