@@ -54,29 +54,20 @@ sub BUILDARGS {
 
     my %attrs = (
         mysql_enable_utf8 => Bugzilla->params->{'utf8'},
-        # Needs to be explicitly specified for command-line processes.
-        mysql_auto_reconnect => 1,
     );
 
     return { dsn => $dsn, user => $user, pass => $pass, attrs => \%attrs };
 }
 
-sub BUILD {
-    my $self = shift;
+sub on_dbi_connected {
+    my ($class, $dbh) = @_;
 
     # This makes sure that if the tables are encoded as UTF-8, we
     # return their data correctly.
-    $self->do("SET NAMES utf8") if Bugzilla->params->{'utf8'};
-
-    # all class local variables stored in DBI derived class needs to have
-    # a prefix 'private_'. See DBI documentation.
-    $self->{private_bz_tables_locked} = "";
-
-    # Needed by TheSchwartz
-    $self->{private_bz_dsn} = $self->dsn;
+    $dbh->do("SET NAMES utf8") if Bugzilla->params->{'utf8'};
 
     # Bug 321645 - disable MySQL strict mode, if set
-    my ($var, $sql_mode) = $self->selectrow_array(
+    my ($var, $sql_mode) = $dbh->selectrow_array(
         "SHOW VARIABLES LIKE 'sql\\_mode'");
 
     if ($sql_mode) {
@@ -88,15 +79,13 @@ sub BUILD {
                             split(/,/, $sql_mode));
 
         if ($sql_mode ne $new_sql_mode) {
-            $self->do("SET SESSION sql_mode = ?", undef, $new_sql_mode);
+            $dbh->do("SET SESSION sql_mode = ?", undef, $new_sql_mode);
         }
     }
 
     # Allow large GROUP_CONCATs (largely for inserting comments
     # into bugs_fulltext).
     $self->do('SET SESSION group_concat_max_len = 128000000');
-
-    return $self;
 }
 
 # when last_insert_id() is supported on MySQL by lowest DBI/DBD version

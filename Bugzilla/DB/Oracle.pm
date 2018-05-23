@@ -68,19 +68,17 @@ sub BUILDARGS {
     return { dsn => $dsn, user => $user, pass => $pass, attrs => $attrs };
 }
 
-sub BUILD {
-    my $self = shift;
-    # Needed by TheSchwartz
-    $self->{private_bz_dsn} = $dsn;
+sub on_dbi_connected {
+    my ($class, $dbh) = @_;
 
     # Set the session's default date format to match MySQL
-    $self->do("ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS'");
-    $self->do("ALTER SESSION SET NLS_TIMESTAMP_FORMAT='YYYY-MM-DD HH24:MI:SS'");
-    $self->do("ALTER SESSION SET NLS_LENGTH_SEMANTICS='CHAR'")
+    $dbh->do("ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS'");
+    $dbh->do("ALTER SESSION SET NLS_TIMESTAMP_FORMAT='YYYY-MM-DD HH24:MI:SS'");
+    $dbh->do("ALTER SESSION SET NLS_LENGTH_SEMANTICS='CHAR'")
         if Bugzilla->params->{'utf8'};
     # To allow case insensitive query.
-    $self->do("ALTER SESSION SET NLS_COMP='ANSI'");
-    $self->do("ALTER SESSION SET NLS_SORT='BINARY_AI'");
+    $dbh->do("ALTER SESSION SET NLS_COMP='ANSI'");
+    $dbh->do("ALTER SESSION SET NLS_SORT='BINARY_AI'");
 }
 
 sub bz_last_key {

@@ -60,6 +60,17 @@ has [qw(dsn user pass attrs)] => (
     required => 1,
 );
 
+sub BUILD {
+    my $self = shift;
+
+    # all class local variables stored in DBI derived class needs to have
+    # a prefix 'private_'. See DBI documentation.
+    $self->{private_bz_tables_locked} = "";
+
+    # Needed by TheSchwartz
+    $self->{private_bz_dsn} = $self->dsn;
+}
+
 #####################################################################
 # Constants
 #####################################################################
@@ -1295,6 +1306,12 @@ sub _build_dbh {
     if ($override_attrs) {
         foreach my $key (keys %$override_attrs) {
             $attributes->{$key} = $override_attrs->{$key};
+        }
+    }
+    my $class = ref $self;
+    if ($class->can('on_dbi_connected')) {
+        $attributes->{Callbacks} = {
+            connected => sub { $class->on_dbi_connected(@_) },
         }
     }
 

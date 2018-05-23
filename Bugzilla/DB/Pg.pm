@@ -57,15 +57,6 @@ sub BUILDARGS {
     return { dsn => $dsn, user => $user, pass => $pass, attrs => $attrs }
 }
 
-sub BUILD {
-    my $self = shift;
-    # all class local variables stored in DBI derived class needs to have
-    # a prefix 'private_'. See DBI documentation.
-    $self->{private_bz_tables_locked} = "";
-    # Needed by TheSchwartz
-    $self->{private_bz_dsn} = $dsn;
-}
-
 # if last_insert_id is supported on PostgreSQL by lowest DBI/DBD version
 # supported by Bugzilla, this implementation can be removed.
 sub bz_last_key {
