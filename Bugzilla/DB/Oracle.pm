@@ -22,10 +22,9 @@ For interface details see L<Bugzilla::DB> and L<DBI>.
 package Bugzilla::DB::Oracle;
 
 use 5.10.1;
-use strict;
-use warnings;
+use Moo;
 
-use base qw(Bugzilla::DB);
+extends qw(Bugzilla::DB);
 
 use DBD::Oracle;
 use DBD::Oracle qw(:ora_types);
@@ -47,7 +46,7 @@ use constant FULLTEXT_OR => ' OR ';
 
 our $fulltext_label = 0;
 
-sub new {
+sub BUILDARGS {
     my ($class, $params) = @_;
     my ($user, $pass, $host, $dbname, $port) =
         @$params{qw(db_user db_pass db_host db_name db_port)};
@@ -66,12 +65,13 @@ sub new {
                   LongReadLen => max(Bugzilla->params->{'maxattachmentsize'} || 0,
                                      MIN_LONG_READ_LEN) * 1024,
                 };
-    my $self = $class->db_new({ dsn => $dsn, user => $user,
-                                pass => $pass, attrs => $attrs });
+    return { dsn => $dsn, user => $user, pass => $pass, attrs => $attrs };
+}
+
+sub BUILD {
+    my $self = shift;
     # Needed by TheSchwartz
     $self->{private_bz_dsn} = $dsn;
-
-    bless ($self, $class);
 
     # Set the session's default date format to match MySQL
     $self->do("ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS'");
@@ -81,7 +81,6 @@ sub new {
     # To allow case insensitive query.
     $self->do("ALTER SESSION SET NLS_COMP='ANSI'");
     $self->do("ALTER SESSION SET NLS_SORT='BINARY_AI'");
-    return $self;
 }
 
 sub bz_last_key {
