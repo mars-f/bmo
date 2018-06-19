@@ -188,13 +188,13 @@ sub feed_query {
 
         my $revision =
           Bugzilla::Extension::PhabBugz::Revision->new_from_query(
-            { 
+            {
               ids => [ int($revision_id) ]
             }
         );
 
         with_writable_database {
-            $self->process_revision_change($revision);
+            $self->process_revision_change($revision, " created D" . $revision->id);
         };
 
         # Set the build target to a passing status to
@@ -337,11 +337,18 @@ sub process_revision_change {
         blessed $revision_phid
         ? $revision_phid
         : Bugzilla::Extension::PhabBugz::Revision->new_from_query({ phids => [ $revision_phid ] });
-    
+  
+    # Project tags/groups that will be used later for policies, etc.
     my $secure_revision =
       Bugzilla::Extension::PhabBugz::Project->new_from_query(
         {
           name => 'secure-revision'
+        }
+      );
+    my $edit_bugs = 
+        Bugzilla::Extension::PhabBugz::Project->new_from_query(
+        {
+          name => 'bmo-editbugs-team'
         }
       );
 
@@ -352,7 +359,7 @@ sub process_revision_change {
             # If new revision and bug id was omitted, make revision public
             INFO("No bug associated with new revision. Marking public.");
             $revision->set_policy('view', 'public');
-            $revision->set_policy('edit', 'users');
+            $revision->set_policy('edit', ($edit_bugs ? $edit_bugs->phid : 'users'));
             $revision->remove_project($secure_revision->phid);
             $revision->update();
             INFO("SUCCESS");
@@ -382,7 +389,7 @@ sub process_revision_change {
     if (!@{ $bug->groups_in }) {
         INFO('Bug is public so setting view/edit public');
         $revision->set_policy('view', 'public');
-        $revision->set_policy('edit', 'users');
+        $revision->set_policy('edit', ($edit_bugs ? $edit_bugs->phid : 'users'));
         $revision->remove_project($secure_revision->phid);
     }
     # else bug is private.
@@ -803,7 +810,7 @@ sub get_group_members {
     }
 
     return if !@userids;
-    
+
     # Look up the phab ids for these users
     my $phab_users = Bugzilla::Extension::PhabBugz::User->match(
       {
