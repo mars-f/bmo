@@ -83,11 +83,14 @@ sub check_email {
 
 
 sub check_utf8 {
-    my $utf8 = shift;
+    my ($utf8, $entry) = @_;
 
     # You cannot turn off the UTF-8 parameter.
     if ( !$utf8 ) {
         return "You cannot disable UTF-8 support.";
+    }
+    elsif ($entry eq 'utf8mb4' && $utf8 ne 'utf8mb4') {
+        return "You cannot disable UTF8-MB4 support.";
     }
 
     return "";
