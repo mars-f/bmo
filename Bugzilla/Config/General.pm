@@ -32,6 +32,13 @@ use constant get_param_list => (
     },
 
     {
+        name    => 'utf8',
+        type    => 'b',
+        default => '0',
+        checker => \&check_utf8
+    },
+
+    {
         name    => 'shutdownhtml',
         type    => 'l',
         default => ''

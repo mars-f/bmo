@@ -107,7 +107,7 @@ sub html_quote {
     my $var = shift;
     $var =~ s/([&<>"@])/$html_quote{$1}/g;
 
-    state $use_utf8 = "UTF8 FOREVER";
+    state $use_utf8 = Bugzilla->params->{'utf8'};
 
     if ($use_utf8) {
         # Remove control characters if the encoding is utf8.
@@ -237,7 +237,7 @@ sub email_filter {
 sub url_quote {
     my ($toencode) = (@_);
     utf8::encode($toencode) # The below regex works only on bytes
-        if "UTF8 FOREVER" && utf8::is_utf8($toencode);
+        if Bugzilla->params->{'utf8'} && utf8::is_utf8($toencode);
     $toencode =~ s/([^a-zA-Z0-9_\-.])/uc sprintf("%%%02x",ord($1))/eg;
     return $toencode;
 }
@@ -679,7 +679,7 @@ sub bz_crypt {
     }
 
     # Wide characters cause crypt and Digest to die.
-    if ("UTF8 FOREVER") {
+    if (Bugzilla->params->{'utf8'}) {
         utf8::encode($password) if utf8::is_utf8($password);
     }
 
@@ -835,13 +835,13 @@ sub display_value {
 }
 
 sub disable_utf8 {
-    if ("UTF8 FOREVER") {
+    if (Bugzilla->params->{'utf8'}) {
         binmode STDOUT, ':bytes'; # Turn off UTF8 encoding.
     }
 }
 
 sub enable_utf8 {
-    if ("UTF8 FOREVER") {
+    if (Bugzilla->params->{'utf8'}) {
         binmode STDOUT, ':utf8'; # Turn on UTF8 encoding.
     }
 }

@@ -78,7 +78,7 @@ sub page_before_template {
 
             # The patch is going to be displayed in a HTML page and if the utf8
             # param is enabled, we have to encode attachment data as utf8.
-            if ("UTF8 FOREVER") {
+            if (Bugzilla->params->{'utf8'}) {
                 $attachment->data;  # load data
                 utf8::decode($attachment->{data});
             }
