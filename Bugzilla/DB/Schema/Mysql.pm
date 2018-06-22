@@ -126,7 +126,7 @@ sub _get_create_table_ddl {
     my($self, $table) = @_;
     my $mode = Bugzilla::DB::Mysql->utf8_mode;
     my $row_format = $mode eq 'utf8mb4' ? "ROW_FORMAT=" . Bugzilla::DB::Mysql::DEFAULT_ROW_FORMAT : '';
-    my $charset = "CHARACTER SET $mode" : '';
+    my $charset = "CHARACTER SET $mode";
     my $type    = grep($_ eq $table, MYISAM_TABLES) ? 'MYISAM' : 'InnoDB';
     return($self->SUPER::_get_create_table_ddl($table)
            . " ENGINE = $type $charset $row_format");
