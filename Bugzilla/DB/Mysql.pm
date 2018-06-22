@@ -326,6 +326,7 @@ sub bz_setup_database {
             my ($table, undef, undef, $row_format) = @$table;
             my $is_suitable_row_format = any { lc($_) eq lc($row_format) } SUITABLE_ROW_FORMATS;
             unless ($is_suitable_row_format) {
+                print install_string('mysql_row_format_conversion', { table => $table, format => DEFAULT_ROW_FORMAT }), "\n";
                 $self->do(sprintf 'ALTER TABLE %s ROW_FORMAT=%s', $table, DEFAULT_ROW_FORMAT);
             }
         }
