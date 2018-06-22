@@ -32,7 +32,7 @@ use Bugzilla::Util;
 use Bugzilla::Error;
 use Bugzilla::DB::Schema::Mysql;
 
-use List::Util qw(max);
+use List::Util qw(max any);
 use Text::ParseWords;
 
 # This is how many comments of MAX_COMMENT_LENGTH we expect on a single bug.
@@ -41,6 +41,9 @@ use Text::ParseWords;
 use constant MAX_COMMENTS => 50;
 
 use constant FULLTEXT_OR => '|';
+
+use constant DEFAULT_ROW_FORMAT => 'dynamic';
+use constant SUITABLE_ROW_FORMATS => qw( dynamic compressed );
 
 sub BUILDARGS {
     my ($class, $params) = @_;
@@ -64,7 +67,8 @@ sub on_dbi_connected {
 
     # This makes sure that if the tables are encoded as UTF-8, we
     # return their data correctly.
-    $dbh->do("SET NAMES utf8") if Bugzilla->params->{'utf8'};
+    my $mode = Bugzilla->params->{'utf8'} eq 'utf8mb4' ? 'utf8mb4' : 'utf8';
+    $dbh->do("SET NAMES $mode")
 
     # Bug 321645 - disable MySQL strict mode, if set
     my ($var, $sql_mode) = $dbh->selectrow_array(
@@ -310,6 +314,24 @@ sub bz_setup_database {
         die install_string('mysql_innodb_disabled');
     }
 
+    if (Bugzilla->params->{utf8} eq 'utf8mb4') {
+        my %global = map { @$_ } @{ $self->selectall_arrayref(q(SHOW GLOBAL VARIABLES LIKE 'innodb_%')) };
+        my $utf8mb4_supported
+        = $global{innodb_file_format} eq 'Barracuda'
+        && $global{innodb_file_per_table} eq 'ON'
+        && $global{innodb_large_prefix} eq 'ON';
+
+        die install_string('mysql_innodb_settings') unless $utf8mb4_supported;
+
+        my $tables = $self->selectall_arrayref('SHOW TABLE STATUS');
+        foreach my $table (@$tables) {
+            my ($table, undef, undef, $row_format) = @$table;
+            my $is_suitable_row_format = any { lc($_) eq lc($row_format) } SUITABLE_ROW_FORMATS;
+            unless ($is_suitable_row_format) {
+                $self->do(sprintf 'ALTER TABLE %s ROW_FORMAT=%s', $table, DEFAULT_ROW_FORMAT);
+            }
+        }
+    }
 
     my ($sd_index_deleted, $longdescs_index_deleted);
     my @tables = $self->bz_table_list_real();

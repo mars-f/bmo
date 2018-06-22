@@ -85,12 +85,11 @@ sub check_email {
 sub check_utf8 {
     my $utf8 = shift;
 
-    # You cannot turn off the UTF-8 parameter if you've already converted
-    # your tables to utf-8.
-    my $dbh = Bugzilla->dbh;
-    if ( $dbh->isa('Bugzilla::DB::Mysql') && $dbh->bz_db_is_utf8 && !$utf8 ) {
-        return "You cannot disable UTF-8 support, because your MySQL database" . " is encoded in UTF-8";
+    # You cannot turn off the UTF-8 parameter.
+    if ( !$utf8 ) {
+        return "You cannot disable UTF-8 support.";
     }
+
     return "";
 }
 
