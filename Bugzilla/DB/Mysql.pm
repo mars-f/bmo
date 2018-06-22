@@ -65,7 +65,7 @@ sub on_dbi_connected {
 
     # This makes sure that if the tables are encoded as UTF-8, we
     # return their data correctly.
-    my $mode = $class->_utf8_mode;
+    my $mode = $class->utf8_mode;
     $dbh->do("SET NAMES $mode");
 
     # Bug 321645 - disable MySQL strict mode, if set
@@ -312,7 +312,7 @@ sub bz_setup_database {
         die install_string('mysql_innodb_disabled');
     }
 
-    if ($self->_utf8_mode eq 'utf8mb4') {
+    if ($self->utf8_mode eq 'utf8mb4') {
         my %global = map { @$_ } @{ $self->selectall_arrayref(q(SHOW GLOBAL VARIABLES LIKE 'innodb_%')) };
         my $utf8mb4_supported
         = $global{innodb_file_format} eq 'Barracuda'
@@ -580,7 +580,7 @@ sub bz_setup_database {
     # the table charsets.
     #
     # TABLE_COLLATION IS NOT NULL prevents us from trying to convert views.
-    my $mode = $self->_utf8_mode;
+    my $mode = $self->utf8_mode;
     my $non_utf8_tables = $self->selectrow_array(
         "SELECT 1 FROM information_schema.TABLES
           WHERE TABLE_SCHEMA = ? AND TABLE_COLLATION IS NOT NULL
@@ -760,14 +760,14 @@ sub _fix_defaults {
     }
 }
 
-sub _utf8_mode {
+sub utf8_mode {
     return Bugzilla->params->{'utf8'} eq 'utf8mb4' ? 'utf8mb4' : 'utf8';
 }
 
 sub _alter_db_charset_to_utf8 {
     my $self = shift;
     my $db_name = Bugzilla->localconfig->{db_name};
-    my $mode = $self->_utf8_mode;
+    my $mode = $self->utf8_mode;
     $self->do("ALTER DATABASE $db_name CHARACTER SET $mode");
 }
 
@@ -776,7 +776,7 @@ sub bz_db_is_utf8 {
     my $db_collation = $self->selectrow_arrayref(
         "SHOW VARIABLES LIKE 'character_set_database'");
     # First column holds the variable name, second column holds the value.
-    my $mode = $self->_utf8_mode;
+    my $mode = $self->utf8_mode;
     return $db_collation->[1] =~ /$mode/ ? 1 : 0;
 }
 
