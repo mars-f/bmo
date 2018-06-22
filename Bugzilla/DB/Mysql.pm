@@ -55,9 +55,7 @@ sub BUILDARGS {
     $dsn .= ";port=$port" if $port;
     $dsn .= ";mysql_socket=$sock" if $sock;
 
-    my %attrs = (
-        mysql_enable_utf8 => Bugzilla->params->{'utf8'},
-    );
+    my %attrs = ( mysql_enable_utf8 => 1 );
 
     return { dsn => $dsn, user => $user, pass => $pass, attrs => \%attrs };
 }
@@ -67,7 +65,7 @@ sub on_dbi_connected {
 
     # This makes sure that if the tables are encoded as UTF-8, we
     # return their data correctly.
-    my $mode = Bugzilla->params->{'utf8'} eq 'utf8mb4' ? 'utf8mb4' : 'utf8';
+    my $mode = $class->_utf8_mode;
     $dbh->do("SET NAMES $mode")
 
     # Bug 321645 - disable MySQL strict mode, if set
@@ -314,7 +312,7 @@ sub bz_setup_database {
         die install_string('mysql_innodb_disabled');
     }
 
-    if (Bugzilla->params->{utf8} eq 'utf8mb4') {
+    if ($self->_utf8_mode eq 'utf8mb4') {
         my %global = map { @$_ } @{ $self->selectall_arrayref(q(SHOW GLOBAL VARIABLES LIKE 'innodb_%')) };
         my $utf8mb4_supported
         = $global{innodb_file_format} eq 'Barracuda'
@@ -581,10 +579,11 @@ sub bz_setup_database {
     # the table charsets.
     #
     # TABLE_COLLATION IS NOT NULL prevents us from trying to convert views.
+    my $mode = $self->_utf8_mode;
     my $non_utf8_tables = $self->selectrow_array(
         "SELECT 1 FROM information_schema.TABLES
           WHERE TABLE_SCHEMA = ? AND TABLE_COLLATION IS NOT NULL
-                AND TABLE_COLLATION NOT LIKE 'utf8%'
+                AND TABLE_COLLATION NOT LIKE '$mode%'
           LIMIT 1", undef, $db_name);
 
     if (Bugzilla->params->{'utf8'} && $non_utf8_tables) {
@@ -602,8 +601,7 @@ sub bz_setup_database {
             }
         }
 
-        print "Converting table storage format to UTF-8. This may take a",
-              " while.\n";
+        print "Converting table storage format to $mode. This may take a while.\n";
         foreach my $table ($self->bz_table_list_real) {
             my $info_sth = $self->prepare("SHOW FULL COLUMNS FROM $table");
             $info_sth->execute();
@@ -616,11 +614,11 @@ sub bz_setup_database {
                 # If this particular column isn't stored in utf-8
                 if ($column->{Collation}
                     && $column->{Collation} ne 'NULL'
-                    && $column->{Collation} !~ /utf8/)
+                    && $column->{Collation} !~ /$mode/)
                 {
                     my $name = $column->{Field};
 
-                    print "$table.$name needs to be converted to UTF-8...\n";
+                    print "$table.$name needs to be converted to $mode...\n";
 
                     # These will be automatically re-created at the end
                     # of checksetup.
@@ -640,7 +638,7 @@ sub bz_setup_database {
                     my ($binary, $utf8) = ($sql_def, $sql_def);
                     my $type = $self->_bz_schema->convert_type($col_info->{TYPE});
                     $binary =~ s/(\Q$type\E)/$1 CHARACTER SET binary/;
-                    $utf8   =~ s/(\Q$type\E)/$1 CHARACTER SET utf8/;
+                    $utf8   =~ s/(\Q$type\E)/$1 CHARACTER SET $mode/;
                     push(@binary_sql, "MODIFY COLUMN $name $binary");
                     push(@utf8_sql, "MODIFY COLUMN $name $utf8");
                 }
@@ -661,7 +659,7 @@ sub bz_setup_database {
                 print "Converting the $table table to UTF-8...\n";
                 my $bin = "ALTER TABLE $table " . join(', ', @binary_sql);
                 my $utf = "ALTER TABLE $table " . join(', ', @utf8_sql,
-                          'DEFAULT CHARACTER SET utf8');
+                          "DEFAULT CHARACTER SET $mode");
                 $self->do($bin);
                 $self->do($utf);
 
@@ -671,7 +669,7 @@ sub bz_setup_database {
                 }
             }
             else {
-                $self->do("ALTER TABLE $table DEFAULT CHARACTER SET utf8");
+                $self->do("ALTER TABLE $table DEFAULT CHARACTER SET $mode");
             }
 
         } # foreach my $table (@tables)
@@ -761,10 +759,15 @@ sub _fix_defaults {
     }
 }
 
+sub _utf8_mode {
+    return Bugzilla->params->{'utf8'} eq 'utf8mb4' ? 'utf8mb4' : 'utf8';
+}
+
 sub _alter_db_charset_to_utf8 {
     my $self = shift;
     my $db_name = Bugzilla->localconfig->{db_name};
-    $self->do("ALTER DATABASE $db_name CHARACTER SET utf8");
+    my $mode = $self->_utf8_mode;
+    $self->do("ALTER DATABASE $db_name CHARACTER SET $mode");
 }
 
 sub bz_db_is_utf8 {
@@ -772,7 +775,8 @@ sub bz_db_is_utf8 {
     my $db_collation = $self->selectrow_arrayref(
         "SHOW VARIABLES LIKE 'character_set_database'");
     # First column holds the variable name, second column holds the value.
-    return $db_collation->[1] =~ /utf8/ ? 1 : 0;
+    my $mode = $self->_utf8_mode;
+    return $db_collation->[1] =~ /$mode/ ? 1 : 0;
 }
 
 
