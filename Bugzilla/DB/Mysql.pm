@@ -66,7 +66,7 @@ sub on_dbi_connected {
     # This makes sure that if the tables are encoded as UTF-8, we
     # return their data correctly.
     my $mode = $class->_utf8_mode;
-    $dbh->do("SET NAMES $mode")
+    $dbh->do("SET NAMES $mode");
 
     # Bug 321645 - disable MySQL strict mode, if set
     my ($var, $sql_mode) = $dbh->selectrow_array(
