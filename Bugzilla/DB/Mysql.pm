@@ -761,6 +761,7 @@ sub _fix_defaults {
 }
 
 sub utf8_mode {
+    return 'utf8' unless Bugzilla->params->{'utf8'};
     return Bugzilla->params->{'utf8'} eq 'utf8mb4' ? 'utf8mb4' : 'utf8';
 }
 
