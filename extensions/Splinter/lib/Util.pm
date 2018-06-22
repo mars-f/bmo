@@ -182,7 +182,7 @@ sub _fix_encoding {
         : '';
     return unless !$charset || $charset eq 'us-ascii';
 
-    if ("UTF8 FOREVER") {
+    if (Bugzilla->params->{utf8}) {
         $part->charset_set('UTF-8');
         my $raw = $part->body_raw;
         if (utf8::is_utf8($raw)) {

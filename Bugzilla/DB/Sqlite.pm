@@ -93,7 +93,7 @@ sub BUILDARGS {
 
     my $attrs = {
         # XXX Should we just enforce this to be always on?
-        sqlite_unicode => "UTF8 FOREVER",
+        sqlite_unicode => Bugzilla->params->{'utf8'},
     };
 
     return { dsn => $dsn, user => '', pass => '', attrs => $attrs };
