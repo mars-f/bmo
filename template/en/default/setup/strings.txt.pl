@@ -354,6 +354,7 @@ renaming is ##minutes## minutes. You cannot interrupt this action once
 it has begun. If you would like to cancel, press Ctrl-C now...
 (Waiting 45 seconds...)
 END
+    mysql_row_format_conversion => "Converting ##table## to row format ##format##.",
     mysql_utf8_conversion => <<'END',
 WARNING: We are about to convert your table storage format to UTF-8. This
          allows Bugzilla to correctly store and sort international characters.
