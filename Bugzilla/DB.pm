@@ -12,32 +12,15 @@ use Moo;
 
 use DBI;
 use DBIx::Connector;
+our %Connector;
 
-# This is here to make the diff make more sense
 has 'dbh' => (
     is      => 'lazy',
     handles => [
         qw[
-            begin_work
-            column_info
-            commit
-            disconnect
-            do
-            errstr
-            get_info
-            last_insert_id
-            ping
-            prepare
-            primary_key
-            quote_identifier
-            rollback
-            selectall_arrayref
-            selectall_hashref
-            selectcol_arrayref
-            selectrow_array
-            selectrow_arrayref
-            selectrow_hashref
-            table_info
+            begin_work column_info commit disconnect do errstr get_info last_insert_id ping prepare
+            primary_key quote_identifier rollback selectall_arrayref selectall_hashref
+            selectcol_arrayref selectrow_array selectrow_arrayref selectrow_hashref table_info
         ]
     ],
 );
@@ -60,17 +43,6 @@ has [qw(dsn user pass attrs)] => (
     is       => 'ro',
     required => 1,
 );
-
-sub BUILD {
-    my $self = shift;
-
-    # all class local variables stored in DBI derived class needs to have
-    # a prefix 'private_'. See DBI documentation.
-    $self->{private_bz_tables_locked} = "";
-
-    # Needed by TheSchwartz
-    $self->{private_bz_dsn} = $self->dsn;
-}
 
 #####################################################################
 # Constants
@@ -306,6 +278,7 @@ sub _get_no_db_connection {
     my $dbh;
     my %connect_params = %{ Bugzilla->localconfig };
     $connect_params{db_name} = '';
+    local %Connector = ();
     my $conn_success = eval {
         $dbh = _connect(\%connect_params);
     };
@@ -1282,8 +1255,6 @@ sub bz_rollback_transaction {
 # Subclass Helpers
 #####################################################################
 
-my %Cache;
-
 sub _build_dbh {
     my ($self) = @_;
     my ($dsn, $user, $pass, $override_attrs) =
@@ -1316,7 +1287,7 @@ sub _build_dbh {
         }
     }
 
-    my $connector = $Cache{"$user.$dsn"} //= DBIx::Connector->new($dsn, $user, $pass, $attributes);
+    my $connector = $Connector{"$user.$dsn"} //= DBIx::Connector->new($dsn, $user, $pass, $attributes);
 
     return $connector->dbh;
 }
