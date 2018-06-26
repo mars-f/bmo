@@ -24,7 +24,8 @@ use Bugzilla::Extension::PhabBugz::Util qw(
 );
 
 use DateTime ();
-use List::Util qw(uniq);
+use List::Util qw(first uniq);
+use List::MoreUtils qw(any);
 use MIME::Base64 qw(decode_base64);
 
 use constant READ_ONLY => qw(
