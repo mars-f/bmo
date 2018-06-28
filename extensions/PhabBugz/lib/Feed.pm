@@ -412,12 +412,12 @@ sub process_revision_change {
                 INFO("Creating new custom policy: " . join(", ", @$set_project_names));
                 $revision->make_private($set_project_names);
             }
-        }
 
-        # Subscriber list of the private revision should always match
-        # the bug roles such as assignee, qa contact, and cc members.
-        my $subscribers = get_bug_role_phids($bug);
-        $revision->set_subscribers($subscribers);
+            # Subscriber list of the private revision should always match
+            # the bug roles such as assignee, qa contact, and cc members.
+            my $subscribers = get_bug_role_phids($bug);
+            $revision->set_subscribers($subscribers);
+        }
     }
 
     my ($timestamp) = Bugzilla->dbh->selectrow_array("SELECT NOW()");
@@ -477,7 +477,7 @@ sub process_revision_change {
             phids => \@accepted_phids
           }
         );
-        @accepted_user_ids = map { $_->bugzilla_user->id } @$phab_users;
+        @accepted_user_ids = map { $_->bugzilla_user->id } grep { defined $_->bugzilla_user } @$phab_users;
     }
 
     if ( @denied_phids ) {
@@ -486,7 +486,7 @@ sub process_revision_change {
             phids => \@denied_phids
           }
         );
-        @denied_user_ids = map { $_->bugzilla_user->id } @$phab_users;
+        @denied_user_ids = map { $_->bugzilla_user->id } grep { defined $_->bugzilla_user } @$phab_users;
     }
 
     my %reviewers_hash =  map { $_->name => 1 } @{ $revision->reviewers };
