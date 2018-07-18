@@ -13,8 +13,23 @@ use Test::More "no_plan";
 
 use QA::Util;
 
+BEGIN {
+    package ProxyObject;
+    use Moose;
+    has 'sel' => (is => 'ro', required => 1, handles => qr/./);
+
+    sub wait_for_page_to_load_ok {
+        my ($self, $time) = @_;
+        my ($pkg, $file, $line) = caller;
+        my $url = $self->sel->get_location();
+        warn "LINE $line URL: $url" if $file =~ /test_bug_edit/;
+        return $self->sel->wait_for_page_to_load_ok($time);
+    }
+};
+
 my ($sel, $config) = get_selenium();
 
+$sel = ProxyObject->new(sel => $sel);
 log_in($sel, $config, 'admin');
 set_parameters($sel, { "Bug Fields" => {"usestatuswhiteboard-on" => undef} });
 
