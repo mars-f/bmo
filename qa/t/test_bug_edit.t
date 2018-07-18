@@ -22,9 +22,10 @@ BEGIN {
     sub wait_for_page_to_load_ok {
         my ($self, $time) = @_;
         my ($pkg, $file, $line) = caller;
+        my $result = $self->sel->wait_for_page_to_load_ok($time);
         my $url = $self->sel->get_location();
         warn "LINE $line URL: $url" if $file =~ /test_bug_edit/;
-        return $self->sel->wait_for_page_to_load_ok($time);
+        return $result;
     }
 };
 
