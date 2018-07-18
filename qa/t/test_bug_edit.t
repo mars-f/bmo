@@ -15,9 +15,16 @@ use QA::Util;
 
 BEGIN {
     package ProxyObject;
-    use Moose;
-    has 'sel' => (is => 'ro', isa => 'Test::WWW::Selenium', required => 1, handles => qr/^\w+$/);
-    use overload '""' => sub { overload::StrVal($_[0]) }, fallback => 1;
+    use Moo;
+    has 'sel' => (is => 'ro', isa => 'Test::WWW::Selenium', required => 1);
+
+    our $AUTOLOAD;
+    sub AUTOLOAD {
+        my $self = shift;
+        my ($method) = (split(/::/, $AUTOLOAD))[-1];
+
+        return $self->sel->$method(@_);
+    }
 
     sub wait_for_page_to_load_ok {
         my ($self, $time) = @_;
