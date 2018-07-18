@@ -16,7 +16,7 @@ use QA::Util;
 BEGIN {
     package ProxyObject;
     use Moose;
-    has 'sel' => (is => 'ro', isa => 'Test::WWW::Selenium', required => 1, handles => qr/./);
+    has 'sel' => (is => 'ro', isa => 'Test::WWW::Selenium', required => 1, handles => qr/^\w+$/);
 
     sub wait_for_page_to_load_ok {
         my ($self, $time) = @_;
