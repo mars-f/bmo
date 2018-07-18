@@ -416,6 +416,8 @@ sub check_page_load {
     }
     my ($pkg, $file, $line) = caller;
     is($uri, $expected_uri, "checking location on $file line $line");
+}
+
 1;
 
 __END__
