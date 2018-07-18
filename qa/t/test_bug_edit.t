@@ -451,16 +451,16 @@ foreach my $params (["no_token_mass_change", ""], ["invalid_token_mass_change", 
     $sel->title_is("Suspicious Action");
     $sel->is_text_present_ok("no valid token for the buglist_mass_change action");
     $sel->click_ok("confirm");
-check_page_load($sel, WAIT_TIME, q{http://HOSTNAME:8000/bmo/process_bug.cgi});
+    check_page_load($sel, WAIT_TIME, q{http://HOSTNAME:8000/bmo/process_bug.cgi});
     $sel->title_is("Bugs processed");
     foreach my $bug_id ($bug1_id, $bug2_id) {
         $sel->click_ok("link=bug $bug_id");
-check_page_load($sel, WAIT_TIME, q{http://HOSTNAME:8000/bmo/show_bug.cgi?id=13});
+        check_page_load($sel, WAIT_TIME, qq{http://HOSTNAME:8000/bmo/show_bug.cgi?id=$bug_id});
         $sel->title_like(qr/^$bug_id /);
         $sel->is_text_present_ok($comment);
         next if $bug_id == $bug2_id;
         $sel->go_back_ok();
-check_page_load($sel, WAIT_TIME, q{http://HOSTNAME:8000/bmo/process_bug.cgi});
+        check_page_load($sel, WAIT_TIME, q{http://HOSTNAME:8000/bmo/process_bug.cgi});
         $sel->title_is("Bugs processed");
     }
 }
