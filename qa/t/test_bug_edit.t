@@ -16,7 +16,7 @@ use QA::Util;
 BEGIN {
     package ProxyObject;
     use Moo;
-    has 'sel' => (is => 'ro', isa => 'Test::WWW::Selenium', required => 1);
+    has 'sel' => (is => 'ro', required => 1);
 
     our $AUTOLOAD;
     sub AUTOLOAD {
