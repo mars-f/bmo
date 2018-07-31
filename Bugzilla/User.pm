@@ -22,7 +22,6 @@ use Bugzilla::Field;
 use Bugzilla::Group;
 use Bugzilla::Hook;
 use Bugzilla::BugUserLastVisit;
-use Bugzilla::Logging;
 
 use DateTime::TimeZone;
 use List::Util qw(max);
@@ -483,9 +482,13 @@ sub set_login {
 }
 
 sub _generate_nickname {
-    my ($name, $login) = @_;
+    my ($name, $login, $id) = @_;
     my ($nick) = extract_nicks($name);
     if (!$nick) {
+        $nick = "";
+    }
+    my ($count) = Bugzilla->dbh->selectrow_array('SELECT COUNT(*) FROM profiles WHERE nickname = ? AND userid != ?', undef, $nick, $id);
+    if ($count) {
         $nick = "";
     }
     return $nick;
@@ -494,9 +497,8 @@ sub _generate_nickname {
 sub set_name {
     my ($self, $name) = @_;
     $self->set('realname', $name);
-    return if $self->login =~ /\.(?:bugs|tld)$/;
     delete $self->{identity};
-    $self->set('nickname', _generate_nickname($name, $self->login));
+    $self->set('nickname', _generate_nickname($name, $self->login, $self->id));
 }
 
 sub set_nick {
@@ -2534,7 +2536,7 @@ sub create {
     my $dbh = Bugzilla->dbh;
 
     $dbh->bz_start_transaction();
-    $params->{nickname} = _generate_nickname($params->{realname}, $params->{login_name});
+    $params->{nickname} = _generate_nickname($params->{realname}, $params->{login_name}, 0);
     my $user = $class->SUPER::create($params);
 
     # Turn on all email for the new user
