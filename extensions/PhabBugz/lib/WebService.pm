@@ -226,6 +226,37 @@ sub set_build_target {
     return { result => 1 };
 }
 
+##########################################
+##
+## Bugzilla::WebService::Server:REST hooks
+##
+##########################################
+
+
+sub webservice_rest_response {
+    my ($self, $args) = @_;
+    my $rpc = $args->{rpc};
+    my $result = $args->{result};
+    my $response = $args->{response};
+
+    return if !Bugzilla->datadog;
+
+    my $dd = Bugzilla->datadog();
+
+    # FIXME Need to filter based on the path being called
+    # Where to find the path being called? In $rpc?  Or $response?
+
+    # FIXME need to distinguish between successful and failed requests
+    # Use $rpc->bz_success_code or (exists $$result->{error})? or ???
+    # How to count 4XX and 5XX status codes?
+    if ($rpc->bz_success_code) {
+        $dd->increment('bugzilla.api.phabbugz.requests');
+    }
+    else {
+        $dd->increment('bugzilla.api.phabbugz.errors');
+    }
+}
+
 sub rest_resources {
     return [
         # Set build target in Phabricator
