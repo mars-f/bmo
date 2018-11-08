@@ -33,20 +33,25 @@ use Bugzilla::Test::MockParams (
 # Util provides a few functions more making mock data in the DB.
 use Bugzilla::Test::Util qw(create_user issue_api_key);
 
+use Datadog::DogStatsd;
+
 use Test2::V0;
 use Test2::Tools::Mock;
 use Test::Mojo;
 
 use Bugzilla;
 
-my @calls;
+my $calls;
 
 my $Datadog = mock 'DataDog::DogStatsd' => (
     add_constructor => [
         'fake_new' => 'hash',
     ],
     override => [
-        increment => sub { push @calls, [@_] }
+        increment => sub {
+            my ($self, $name) = @_;
+            push @$calls, $name;
+        },
     ]
 );
 my $Bugzilla = mock 'Bugzilla' => (
@@ -68,15 +73,15 @@ my $t = Test::Mojo->new('Bugzilla::Quantum');
 $t->post_ok('/rest/phabbugz/build_target/1234/PHID-HMBT-1234' => { 'X-Bugzilla-API-Key' => $api_key });
 $t->status_is(200);
 
-is(['some.metric'], @calls, "Expected one metrics call.");
+is(['some.metric'], $calls, "Expected one metrics call.");
 
 # Check that calls to other URLs don't increment the counter.
-@calls = [];
+$calls = [];
 
 $t->get_ok('/rest/whoami' => { 'X-Bugzilla-API-Key' => $api_key });
 $t->status_is(200);
 
-is([], @calls, "Expected metrics calls to be empty.");
+is([], $calls, "Expected metrics calls to be empty.");
 
 
 done_testing;
